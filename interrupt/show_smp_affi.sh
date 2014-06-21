@@ -38,7 +38,13 @@ function dump_irq_smp_affinity {
 		name=`get_vect_name $irq`
 		value=`cat /proc/irq/$irq/smp_affinity`
 		
-		printf "%30s %40s\n" $name $value
+		if [ -f /proc/irq/$irq/smp_affinity_list ]
+		then
+			cpu_list=`cat /proc/irq/$irq/smp_affinity_list`
+			printf "%30s %40s CPU %s\n" $name $value $cpu_list
+		else
+			printf "%30s %40s\n" $name $value
+		fi
 	done;
 }
 
