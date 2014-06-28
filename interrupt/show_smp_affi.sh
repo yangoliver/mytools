@@ -22,8 +22,17 @@ else
 	INTERVAL=5
 fi
 
+vect_num=`echo $VECT | awk -F":" '{print NF}'`
+
+if [ $vect_num -gt 1 ]
+then
+	vect_array=(`echo $VECT | awk -F":" '{for(i=1;i<=NF;i++){print $i}}'`)
+else
+	vect_array=($VECT)
+fi
+
 cpu_num=`grep processor /proc/cpuinfo| wc -l`
-irqlist=`grep $VECT /proc/interrupts | awk -F: '{print $1}'`
+
 
 function get_vect_name {
 
@@ -32,6 +41,8 @@ function get_vect_name {
 }
 
 function dump_irq_smp_affinity {
+
+	irqlist=`grep $1 /proc/interrupts | awk -F: '{print $1}'`
 	printf "\n"
 	for irq in $irqlist
 	do
@@ -48,10 +59,15 @@ function dump_irq_smp_affinity {
 	done;
 }
 
-echo "Current interval is $INTERVAL, use CTRL+C to quit..."
+echo "Current vector filter is "${vect_array[@]}""
+echo "Interval is $INTERVAL, use CTRL+C to quit..."
 
 while (true)
 do
-	dump_irq_smp_affinity
+	for ((i=0;i<${#vect_array[@]};i++))
+	do
+		dump_irq_smp_affinity ${vect_array[$i]}
+	done
+
 	sleep $INTERVAL
 done;
