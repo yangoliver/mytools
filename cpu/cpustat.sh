@@ -9,6 +9,7 @@ SCHE_DEBUG_LOG=${TMP_DIR}/sched_debug_${TIME}_$$.log
 SCHESTAT_BEFORE_LOG=${TMP_DIR}/schedstat_before_${TIME}_$$.log
 SCHESTAT_AFTER_LOG=${TMP_DIR}/schedstat_after_${TIME}_$$.log
 SCHESTAT_PS_BEFORE_LOG=${TMP_DIR}/schedstat_ps_before_${TIME}_$$.log
+SCHESTAT_PS_AFTER_LOG=${TMP_DIR}/schedstat_ps_after_${TIME}_$$.log
 
 SAR_LOG=${TMP_DIR}/sar_${TIME}_$$.log
 MPSTAT_LOG=${TMP_DIR}/mpstat_${TIME}_$$.log
@@ -118,6 +119,9 @@ trap_exit()
 	printf "Hitted Ctrl-C/Ctrl-\, or received SIGHUP. Now exiting..\n"
 
 	dump_schedstat ${SCHESTAT_AFTER_LOG}
+
+	dump_pid_list_schedstat "$USR_PID_LIST" ${SCHESTAT_PS_AFTER_LOG}
+	dump_pid_list_schedstat "$KERN_PID_LIST" ${SCHESTAT_PS_AFTER_LOG}
 
 	kill_cmd $SAR_PID
 	kill_cmd $MPSTAT_PID
