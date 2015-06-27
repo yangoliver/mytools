@@ -1,0 +1,48 @@
+#!/usr/bin/python
+
+
+"""
+A tool that could show tasks information on Linux per-CPU runq
+"""
+
+import sys
+from optparse import OptionParser
+
+__version__ = '0.1'
+
+def runq_stat(seconds):
+    """Main I/O loop"""
+    runqs = {}
+
+    out = open('/proc/sched_debug', 'r')
+    header = out.readline()
+    print header
+
+    for line in out.readlines():
+        print line
+
+    out.close()
+
+def main(args):
+    """Parse arguments, call main loop"""
+
+    parser = OptionParser(description=__doc__)
+
+    parser.add_option("-v", "--version", action="store_true",
+                      help="get version")
+    parser.add_option("-t", "--time", default='5',
+                      help="update interval in seconds")
+
+    options = parser.parse_args(args)[0]
+
+    if options.version:
+        print __version__
+        return 0
+
+    try:
+        runq_stat(int(options.time))
+    except (KeyboardInterrupt, SystemExit):
+        pass
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
