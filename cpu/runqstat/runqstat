@@ -7,19 +7,66 @@ A tool that could show tasks information on Linux per-CPU runq
 
 import sys
 from optparse import OptionParser
+import re
+import subprocess
 
 __version__ = '0.1'
 
+def gen_numa():
+    """Generate NUMA info"""
+    cpunodes = {}
+    numacores = {}
+    maxnode = 0
+    out = subprocess.Popen('numactl --hardware | grep cpus', shell=True,
+                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    errtxt = out.stderr.readline()
+    if errtxt:
+        print errtxt + '\r\n'
+        print "Is numactl installed?\r"
+        exit(1)
+    for line in out.stdout.readlines():
+        arr = line.split()
+        if arr[0] == "node" and arr[2] == "cpus:" and len(arr) > 3:
+            node = arr[1]
+            numacores[node] = arr[3:]
+            maxnode += 1
+            for core in arr[3:]:
+                cpunodes[core] = node
+    return numacores, cpunodes, maxnode
+
 def runq_stat(seconds):
     """Main I/O loop"""
+    cpu_name = {}
     runqs = {}
+    cpu_found = {}
+    numacores = {}
+
+    numacores, cpunodes, maxnode = gen_numa()
+
+    #print "NUMA Node\tCPU cores\n"
+    #print numacores[0]
 
     out = open('/proc/sched_debug', 'r')
-    header = out.readline()
-    print header
+    sched_debug_header = out.readline()
+    print sched_debug_header
 
+    cpu = 0
+    cpu_found[cpu] = 0
+    runqs[cpu] = -1
     for line in out.readlines():
-        print line
+        if re.search("cpu#",line):
+            cpu_found[cpu] = 1
+            cpu_name[cpu] = "cpu"+str(cpu)
+        if cpu_found[cpu]:
+            if re.search("\.nr_running",line):
+                cpu_data = line.split(':')
+            if re.search("cfs_rq",line):
+                runqs[cpu] = cpu_data[1]
+                print cpu_name[cpu]+": "+runqs[cpu]
+                cpu += 1
+                cpu_found[cpu] = 0
+                runqs[cpu] = -1
+
 
     out.close()
 
