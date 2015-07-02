@@ -9,6 +9,8 @@ import sys
 from optparse import OptionParser
 import re
 import subprocess
+import time
+from time import sleep
 
 __version__ = '0.1'
 
@@ -34,39 +36,95 @@ def gen_numa():
                 cpunodes[core] = node
     return numacores, cpunodes, maxnode
 
-def runq_stat(seconds):
-    """Main I/O loop"""
+def print_numa_header(numacores, cpunodes, maxnode):
+    """print runqstat header"""
+
+    for node in numacores.keys():
+        fmtstr = "Node" + node
+        for cpu in numacores[node]:
+            fmtstr += "\tCPU" + cpu
+        print fmtstr
+
+
+def header_parse(out):
+    """sched_debug header parse"""
+
+    while True:
+        line = out.readline()
+        if re.search("Sched Debug Version:", line):
+            print line
+        if re.search("sched_clock_stable", line):
+            print line
+            break
+
+def sysctl_sched_parse(out):
+    """sysctl_sched parse"""
+
+    print_start = 0
+    while True:
+        line = out.readline()
+        if re.search("sysctl_sched", line):
+            print_start = 1
+        if print_start:
+            print line
+        if print_start and re.search("^\n$", line):
+            print_start = 0
+            break
+
+def cpu_parse(out):
+    """cpu# parse"""
     cpu_name = {}
     runqs = {}
     cpu_found = {}
-    numacores = {}
+    print_header = 1
 
-    numacores, cpunodes, maxnode = gen_numa()
 
-    #print "NUMA Node\tCPU cores\n"
-    #print numacores[0]
-
-    out = open('/proc/sched_debug', 'r')
-    sched_debug_header = out.readline()
-    print sched_debug_header
 
     cpu = 0
     cpu_found[cpu] = 0
     runqs[cpu] = -1
     for line in out.readlines():
-        if re.search("cpu#",line):
+        if re.search("cpu#", line):
             cpu_found[cpu] = 1
-            cpu_name[cpu] = "cpu"+str(cpu)
-        if cpu_found[cpu]:
-            if re.search("\.nr_running",line):
+            cpu_name[cpu] = "cpu" + str(cpu)
+        if re.search("\.nr_running", line):
+            if cpu_found[cpu]:
                 cpu_data = line.split(':')
-            if re.search("cfs_rq",line):
-                runqs[cpu] = cpu_data[1]
-                print cpu_name[cpu]+": "+runqs[cpu]
+                runqs[cpu] = cpu_data[1].strip('\n')
                 cpu += 1
                 cpu_found[cpu] = 0
-                runqs[cpu] = -1
 
+    fmtstr = ''
+    for cpu in cpu_found.keys():
+        if cpu_found[cpu]:
+            fmtstr += "\t" + runqs[cpu]
+
+    print fmtstr+'\n'
+
+def runq_stat(seconds):
+    """Main I/O loop"""
+
+    numacores, cpunodes, maxnode = gen_numa()
+
+    print_once = 1
+    out = open('/proc/sched_debug', 'r')
+    while True:
+        if print_once == 1:
+            header_parse(out)
+            sysctl_sched_parse(out)
+            print "CPU runq task numbers for every %d second(s) \n" % seconds
+            print_once = 0
+
+        print time.ctime() + '\n'
+        print_numa_header(numacores, cpunodes, maxnode)
+        cpu_parse(out)
+
+        # thread.interrupt_main() does not seem to interrupt a sleep, so break
+        # it into tenth-of-a-second sleeps to improve user response time on exit
+        for _ in range(0, seconds * 10):
+            sleep(.1)
+
+        out.seek(0,0)
 
     out.close()
 
