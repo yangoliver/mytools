@@ -71,14 +71,11 @@ def sysctl_sched_parse(out):
             print_start = 0
             break
 
-def cpu_parse(out):
-    """cpu# parse"""
+def runq_parse(out):
+    """runq parse"""
     cpu_name = {}
     runqs = {}
     cpu_found = {}
-    print_header = 1
-
-
 
     cpu = 0
     cpu_found[cpu] = 0
@@ -97,7 +94,7 @@ def cpu_parse(out):
     fmtstr = ''
     for cpu in cpu_found.keys():
         if cpu_found[cpu]:
-            fmtstr += "\t" + runqs[cpu]
+            fmtstr += '\t' + runqs[cpu]
 
     print fmtstr+'\n'
 
@@ -117,10 +114,8 @@ def runq_stat(seconds):
 
         print time.ctime() + '\n'
         print_numa_header(numacores, cpunodes, maxnode)
-        cpu_parse(out)
+        runq_parse(out)
 
-        # thread.interrupt_main() does not seem to interrupt a sleep, so break
-        # it into tenth-of-a-second sleeps to improve user response time on exit
         for _ in range(0, seconds * 10):
             sleep(.1)
 
