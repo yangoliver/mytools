@@ -104,22 +104,30 @@ def runq_stat(seconds):
     numacores, cpunodes, maxnode = gen_numa()
 
     print_once = 1
-    out = open('/proc/sched_debug', 'r')
-    while True:
-        if print_once == 1:
-            header_parse(out)
-            sysctl_sched_parse(out)
-            print "CPU runq task numbers for every %d second(s) \n" % seconds
-            print_once = 0
 
-        print time.ctime() + '\n'
-        print_numa_header(numacores, cpunodes, maxnode)
-        runq_parse(out)
+    try:
+        out = open('/proc/sched_debug', 'r')
 
-        for _ in range(0, seconds * 10):
-            sleep(.1)
+        while True:
+            if print_once == 1:
+                header_parse(out)
+                sysctl_sched_parse(out)
+                print "CPU runq task numbers for every %d second(s)\n" % seconds
+                print_once = 0
 
-        out.seek(0,0)
+            print time.ctime() + '\n'
+            print_numa_header(numacores, cpunodes, maxnode)
+            runq_parse(out)
+
+            for _ in range(0, seconds * 10):
+                sleep(.1)
+
+            out.seek(0,0)
+
+    except IOError:
+        print "Error: can't open /proc/sched_debug"
+        print "please make sure kernel is configed with SCHED_DEBUG."
+        return
 
     out.close()
 
