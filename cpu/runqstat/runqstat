@@ -18,7 +18,6 @@ def gen_numa():
     """Generate NUMA info"""
     cpunodes = {}
     numacores = {}
-    maxnode = 0
     out = subprocess.Popen('numactl --hardware | grep cpus', shell=True,
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     errtxt = out.stderr.readline()
@@ -31,19 +30,26 @@ def gen_numa():
         if arr[0] == "node" and arr[2] == "cpus:" and len(arr) > 3:
             node = arr[1]
             numacores[node] = arr[3:]
-            maxnode += 1
             for core in arr[3:]:
                 cpunodes[core] = node
-    return numacores, cpunodes, maxnode
+    return numacores, cpunodes
 
-def print_numa_header(numacores, cpunodes, maxnode):
+def print_stat(numacores, runqs):
     """print runqstat header"""
 
-    for node in numacores.keys():
-        fmtstr = "Node" + node
-        for cpu in numacores[node]:
-            fmtstr += "\tCPU" + cpu
-        print fmtstr
+    node = 0
+    while node < len(numacores):
+        header = "Node" + str(node)
+        data = ''
+        node_sum = 0
+        for cpu in numacores[str(node)]:
+            header += "\tCPU" + cpu
+            data += '\t' + runqs[int(cpu)]
+            node_sum += int(runqs[int(cpu)])
+        print header
+        print str(node_sum) + data
+        node += 1
+    print '\n'
 
 
 def header_parse(out):
@@ -71,37 +77,29 @@ def sysctl_sched_parse(out):
             print_start = 0
             break
 
-def runq_parse(out):
+def runq_parse(out, numacores):
     """runq parse"""
-    cpu_name = {}
-    runqs = {}
-    cpu_found = {}
 
+    runqs = {}
     cpu = 0
-    cpu_found[cpu] = 0
+    cpu_found = 0
     runqs[cpu] = -1
     for line in out.readlines():
         if re.search("cpu#", line):
-            cpu_found[cpu] = 1
-            cpu_name[cpu] = "cpu" + str(cpu)
+            cpu_found = 1
         if re.search("\.nr_running", line):
-            if cpu_found[cpu]:
+            if cpu_found:
                 cpu_data = line.split(':')
                 runqs[cpu] = cpu_data[1].strip('\n')
                 cpu += 1
-                cpu_found[cpu] = 0
+                cpu_found = 0
 
-    fmtstr = ''
-    for cpu in cpu_found.keys():
-        if cpu_found[cpu]:
-            fmtstr += '\t' + runqs[cpu]
-
-    print fmtstr+'\n'
+    print_stat(numacores, runqs)
 
 def runq_stat(seconds):
     """Main I/O loop"""
 
-    numacores, cpunodes, maxnode = gen_numa()
+    numacores, cpunodes = gen_numa()
 
     print_once = 1
 
@@ -116,8 +114,7 @@ def runq_stat(seconds):
                 print_once = 0
 
             print time.ctime() + '\n'
-            print_numa_header(numacores, cpunodes, maxnode)
-            runq_parse(out)
+            runq_parse(out, numacores)
 
             for _ in range(0, seconds * 10):
                 sleep(.1)
