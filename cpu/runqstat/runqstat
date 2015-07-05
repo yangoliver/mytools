@@ -53,20 +53,28 @@ def gen_numa():
                 cpunodes[core] = node
     return numacores, cpunodes
 
-def print_stat(numacores, runqs):
+def print_stat(numacores, nr_running, nr_switches):
     """print runqstat header"""
 
+    width = 16
+    width = min(width, len(nr_switches[0]))
     node = 0
+    header = '           '
     while node < len(numacores):
-        header = "Node" + str(node)
-        data = ''
-        node_sum = 0
+        header += (' %' + str(width) + 's ') % ("Node" + str(node))
+        data1 = ''
+        data2 = ''
+        node_sum1 = 0
+        node_sum2 = 0
         for cpu in numacores[str(node)]:
-            header += "\tCPU" + cpu
-            data += '\t' + runqs[int(cpu)]
-            node_sum += int(runqs[int(cpu)])
+            header += (' %' + str(width) + 's ') % ("CPU" + cpu)
+            data1 += (' %' + str(width) + 's ') % nr_running[int(cpu)]
+            data2 += (' %' + str(width) + 's ') % nr_switches[int(cpu)]
+            node_sum1 += int(nr_running[int(cpu)])
+            node_sum2 += int(nr_switches[int(cpu)])
         print header
-        print str(node_sum) + data
+        print ('nr_running %' + str(width) + 's ') % str(node_sum1) + data1
+        print ('nr_switches %' + str(width) + 's ') % str(node_sum2) + data2
         node += 1
     print '\n'
 
@@ -99,21 +107,26 @@ def sysctl_sched_parse(out):
 def runq_parse(out, numacores):
     """runq parse"""
 
-    runqs = {}
+    nr_running = {}
+    nr_switches = {}
     cpu = 0
     cpu_found = 0
-    runqs[cpu] = -1
+    nr_running[cpu] = -1
+    nr_switches[cpu] = -1
     for line in out.readlines():
         if re.search("cpu#", line):
             cpu_found = 1
         if re.search("\.nr_running", line):
             if cpu_found:
                 cpu_data = line.split(':')
-                runqs[cpu] = cpu_data[1].strip('\n')
+                nr_running[cpu] = cpu_data[1].strip('\n')
+        if re.search("\.nr_switches", line):
+                cpu_data = line.split(':')
+                nr_switches[cpu] = cpu_data[1].strip('\n')
                 cpu += 1
                 cpu_found = 0
 
-    print_stat(numacores, runqs)
+    print_stat(numacores, nr_running, nr_switches)
 
 def runq_stat(seconds):
     """Main I/O loop"""
