@@ -53,11 +53,21 @@ def gen_numa():
                 cpunodes[core] = node
     return numacores, cpunodes
 
-def print_stat(numacores, nr_running, nr_switches):
-    """print runqstat header"""
+def cpus_init(cpus, numacores):
+    """initialize cpus data with default value"""
 
-    width = 16
-    width = min(width, len(nr_switches[0]))
+    runq = {}
+    node = 0
+    for cpu in numacores[str(node)]:
+        runq["nr_running"] = -1
+        runq["nr_switches"] = -1
+        runq["nr_switches_old"] = -1
+        cpus[int(cpu)] = runq.copy()
+
+def print_stat(numacores, cpus):
+    """print runq stat data"""
+
+    width = 8
     node = 0
     header = '           '
     while node < len(numacores):
@@ -68,10 +78,12 @@ def print_stat(numacores, nr_running, nr_switches):
         node_sum2 = 0
         for cpu in numacores[str(node)]:
             header += (' %' + str(width) + 's ') % ("CPU" + cpu)
-            data1 += (' %' + str(width) + 's ') % nr_running[int(cpu)]
-            data2 += (' %' + str(width) + 's ') % nr_switches[int(cpu)]
-            node_sum1 += int(nr_running[int(cpu)])
-            node_sum2 += int(nr_switches[int(cpu)])
+            runq = cpus[int(cpu)]
+            data1 += (' %' + str(width) + 'd ') % runq["nr_running"]
+            delta = runq["nr_switches"] - runq["nr_switches_old"]
+            data2 += (' %' + str(width) + 'd ') % delta
+            node_sum1 += runq["nr_running"]
+            node_sum2 += delta
         print header
         print ('nr_running %' + str(width) + 's ') % str(node_sum1) + data1
         print ('nr_switches %' + str(width) + 's ') % str(node_sum2) + data2
@@ -104,49 +116,52 @@ def sysctl_sched_parse(out):
             print_start = 0
             break
 
-def runq_parse(out, numacores):
+def runq_parse(out, numacores, cpus):
     """runq parse"""
 
-    nr_running = {}
-    nr_switches = {}
     cpu = 0
     cpu_found = 0
-    nr_running[cpu] = -1
-    nr_switches[cpu] = -1
     for line in out.readlines():
         if re.search("cpu#", line):
             cpu_found = 1
+            runq = cpus[cpu]
         if re.search("\.nr_running", line):
             if cpu_found:
-                cpu_data = line.split(':')
-                nr_running[cpu] = cpu_data[1].strip('\n')
+                val = line.split(':')
+                runq["nr_running"] = int(val[1].strip('\n'))
         if re.search("\.nr_switches", line):
-                cpu_data = line.split(':')
-                nr_switches[cpu] = cpu_data[1].strip('\n')
+                val = line.split(':')
+                if runq["nr_switches"] != -1:
+                    runq["nr_switches_old"] = runq["nr_switches"]
+                else:
+                    runq["nr_switches_old"] = 0
+                runq["nr_switches"] = int(val[1].strip('\n'))
                 cpu += 1
                 cpu_found = 0
 
-    print_stat(numacores, nr_running, nr_switches)
+    print_stat(numacores, cpus)
 
 def runq_stat(seconds):
     """Main I/O loop"""
 
+    cpus = {}
     numacores, cpunodes = gen_numa()
 
-    print_once = 1
+    run_once = 1
 
     try:
         out = open('/proc/sched_debug', 'r')
 
         while True:
-            if print_once == 1:
+            if run_once == 1:
+                cpus_init(cpus, numacores)
                 header_parse(out)
                 sysctl_sched_parse(out)
                 print "CPU runq task numbers for every %d second(s)\n" % seconds
-                print_once = 0
+                run_once = 0
 
             print time.ctime() + '\n'
-            runq_parse(out, numacores)
+            runq_parse(out, numacores, cpus)
 
             for _ in range(0, seconds * 10):
                 sleep(.1)
