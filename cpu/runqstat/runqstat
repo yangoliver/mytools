@@ -58,35 +58,39 @@ def cpus_init(cpus, numacores):
 
     runq = {}
     node = 0
-    for cpu in numacores[str(node)]:
-        runq["nr_running"] = -1
-        runq["nr_switches"] = -1
-        runq["nr_switches_old"] = -1
-        cpus[int(cpu)] = runq.copy()
+    while node < len(numacores):
+        for cpu in numacores[str(node)]:
+            runq["nr_running"] = -1
+            runq["nr_switches"] = -1
+            runq["nr_switches_old"] = -1
+            cpus[int(cpu)] = runq.copy()
+        node += 1
 
 def print_stat(numacores, cpus):
     """print runq stat data"""
 
-    width = 8
+    header_width = len("nr_switches")
+    width = 6
     node = 0
-    header = '           '
     while node < len(numacores):
-        header += (' %' + str(width) + 's ') % ("Node" + str(node))
+        header = ('%' + str(header_width) + 's') % ' '
+        header += (' %' + str(width) + 's') % ("Node" + str(node))
         data1 = ''
         data2 = ''
         node_sum1 = 0
         node_sum2 = 0
         for cpu in numacores[str(node)]:
-            header += (' %' + str(width) + 's ') % ("CPU" + cpu)
+            header += (' %' + str(width) + 's') % ("CPU" + cpu)
             runq = cpus[int(cpu)]
-            data1 += (' %' + str(width) + 'd ') % runq["nr_running"]
+            data1 += (' %' + str(width) + 'd') % runq["nr_running"]
             delta = runq["nr_switches"] - runq["nr_switches_old"]
-            data2 += (' %' + str(width) + 'd ') % delta
+            data2 += (' %' + str(width) + 'd') % delta
             node_sum1 += runq["nr_running"]
             node_sum2 += delta
         print header
-        print ('nr_running %' + str(width) + 's ') % str(node_sum1) + data1
-        print ('nr_switches %' + str(width) + 's ') % str(node_sum2) + data2
+        print ('nr_running %' + str(width) + 's') % str(node_sum1) + data1
+        print ('nr_switches %' + str(width) + 's') % str(node_sum2) + data2
+        print '\n'
         node += 1
     print '\n'
 
