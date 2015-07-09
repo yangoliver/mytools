@@ -60,10 +60,7 @@ def cpus_init(cpus, numacores):
     node = 0
     while node < len(numacores):
         for cpu in numacores[str(node)]:
-            runq["nr_running"] = -1
-            runq["load"] = -1
-            runq["nr_switches"] = -1
-            runq["nr_switches_old"] = -1
+            runq[".nr_switches_old"] = -1
             cpus[int(cpu)] = runq.copy()
         node += 1
 
@@ -87,12 +84,12 @@ def print_stat(numacores, cpus):
         for cpu in numacores[str(node)]:
             header += ('\t%' + str(width) + 's') % ("CPU" + cpu)
             runq = cpus[int(cpu)]
-            data1 += fmtstr1 % runq["nr_running"]
-            data2 += fmtstr1 % runq["load"]
-            delta = runq["nr_switches"] - runq["nr_switches_old"]
+            data1 += fmtstr1 % runq[".nr_running"]
+            data2 += fmtstr1 % runq[".load"]
+            delta = int(runq[".nr_switches"]) - int(runq[".nr_switches_old"])
             data3 += fmtstr1 % delta
-            node_sum1 += runq["nr_running"]
-            node_sum2 += runq["load"]
+            node_sum1 += int(runq[".nr_running"])
+            node_sum2 += int(runq[".load"])
             node_sum3 += delta
         print header
         print fmtstr2 % ("nr_running", str(node_sum1) + data1)
@@ -137,22 +134,19 @@ def runq_parse(out, numacores, cpus):
         if re.search("cpu#", line):
             cpu_found = 1
             runq = cpus[cpu]
-        if re.search("\.nr_running", line):
-            if cpu_found:
-                val = line.split(':')
-                runq["nr_running"] = int(val[1].strip('\n'))
-        if re.search("load", line):
-                val = line.split(':')
-                runq["load"] = int(val[1].strip('\n'))
-        if re.search("\.nr_switches", line):
-                val = line.split(':')
-                if runq["nr_switches"] != -1:
-                    runq["nr_switches_old"] = runq["nr_switches"]
+            continue
+        if cpu_found:
+            key, val = line.split(':')
+            key = key.strip()
+            val = val.strip('\n')
+            if re.search("\.nr_switches", line):
+                if runq[".nr_switches_old"] != -1:
+                    runq[".nr_switches_old"] = runq[".nr_switches"]
                 else:
-                    runq["nr_switches_old"] = 0
-                runq["nr_switches"] = int(val[1].strip('\n'))
+                    runq[".nr_switches_old"] = 0
                 cpu += 1
                 cpu_found = 0
+            runq[key] = val
 
     print_stat(numacores, cpus)
 
