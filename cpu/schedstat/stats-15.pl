@@ -2,20 +2,17 @@
 
 use Getopt::Std;
 
-$curr_version = 12;
+$curr_version = 15;
 
-$YLD_BOTH_EMPTY		= 1;
-$YLD_ACT_EMPTY		= 2;
-$YLD_EXP_EMPTY		= 3;
-$YLD_CNT		= 4;
-$SCHED_NOSWITCH		= 5;
-$SCHED_CNT		= 6;
-$SCHED_GOIDLE		= 7;
-$TTWU_CNT		= 8;
-$TTWU_LOCAL		= 9;
-$CPU_CPUTIME		= 10;
-$CPU_RUNDELAY		= 11;
-$CPU_TRIPCNT		= 12;
+$YLD_CNT		= 1;
+$LEGACY_EXP_CNT		= 2;
+$SCHED_CNT		= 3;
+$SCHED_GOIDLE		= 4;
+$TTWU_CNT		= 5;
+$TTWU_LOCAL		= 6;
+$CPU_CPUTIME		= 7;
+$CPU_RUNDELAY		= 8;
+$CPU_SLICE_CNT		= 9;
 
 #
 # per-domain stats
@@ -50,6 +47,14 @@ $LB_NOBUSYG_NEWIDLE	= 25;
 $ALB_CNT		= 26;
 $ALB_FAILED		= 27;
 $ALB_PUSHED		= 28;
+
+$SBE_CNT		= 29;
+$SBE_FAILED		= 30;
+$SBE_PUSHED		= 31;
+
+$SBF_CNT		= 32;
+$SBF_FAILED		= 33;
+$SBF_PUSHED		= 34;
 
 $TTWU_WAKE_REMOTE	= 35;
 $TTWU_MOVE_AFFINE	= 36;
@@ -87,7 +92,7 @@ sub summarize_data {
     foreach $cpu (0 .. $max_cpu) {
 	@arr_curr = @{$per_cpu_curr[$cpu]};
 	@arr_prev = @{$per_cpu_prev[$cpu]};
-	foreach $i (1 .. 12) {
+	foreach $i (1 .. 9) {
 	    $arr_diff[$i] = $arr_curr[$i] - $arr_prev[$i];
 	    $diff[$i] += $arr_diff[$i];
 	}
@@ -98,13 +103,13 @@ sub summarize_data {
 	#
 	@domain_diff_bycpu[$cpu] = [ ];
 	foreach $domain (0..$max_domain) {
-	    @arr_curr = @{@{$per_cpu_curr[$cpu]}[$domain+13]};
-	    @arr_prev = @{@{$per_cpu_prev[$cpu]}[$domain+13]};
+	    @arr_curr = @{@{$per_cpu_curr[$cpu]}[$domain+10]};
+	    @arr_prev = @{@{$per_cpu_prev[$cpu]}[$domain+10]};
 	    foreach $i (2..37) {
-		#print "domain$domain: arr_curr[$i] ($arr_curr[$i]) -" .
-		#    " arr_prev[$i] ($arr_prev[$i])\n";
+		print "domain$domain: arr_curr[$i] ($arr_curr[$i]) -" .
+		    " arr_prev[$i] ($arr_prev[$i])\n";
 		$arr_diff[$i] = $arr_curr[$i] - $arr_prev[$i];
-		$diff[$domain+13][$i] += $arr_diff[$i];
+		$diff[$domain+10][$i] += $arr_diff[$i];
 		$domain_diff_bycpu[$cpu]->[i] += $arr_diff[$i];
 		$domain_diff_all[$i] += $arr_diff[$i];
 	    }
@@ -128,9 +133,9 @@ while (<>) {
     if ($curr[0] =~ /domain(\d+)/) {
 	$arr = $per_cpu_curr[$curr_cpu];
 	push @{$arr}, [ @curr ];
-	#print "@{$arr}\n";
-	#print "($curr_cpu,$1)$arr->[0],$arr->[$#{@{$arr}}]->[0]\n";
-	#print "$#{@{$arr}}\n";
+	print "oliver @{$arr}\n";
+	print "($curr_cpu,$1)$arr->[0],$arr->[$#{@{$arr}}]->[0]\n";
+	print "$#{@{$arr}}\n";
 	$max_domain = $1 if ($1 > $max_domain);
 	next;
     }
@@ -176,10 +181,10 @@ while (<>) {
     #
     # format of line in /proc/schedstat
     #
-    # cpuN 1 2 3 4 5 6 7 8 9 10 11 12
+    # cpuN 1 2 3 4 5 6 7 8 9
     # domainN xxxxxxxx 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37
     #
-    # version == 12
+    # version == 15
     #
     # These are the fields from the cpuN field, and deal with the runqueue
     # that cpu is in.  [The fields listed in the comments below are currently
