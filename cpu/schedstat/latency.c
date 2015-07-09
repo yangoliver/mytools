@@ -15,6 +15,10 @@
  */
 #include <stdio.h>
 #include <getopt.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
+#include <unistd.h>
 
 extern char *index(), *rindex();
 char procbuf[512];
@@ -85,7 +89,7 @@ void get_id(char *buf, char *id)
     return;
 }
 
-main(int argc, char *argv[])
+void main(int argc, char *argv[])
 {
     int c;
     unsigned int sleeptime = 5, pid = 0, verbose = 0;
