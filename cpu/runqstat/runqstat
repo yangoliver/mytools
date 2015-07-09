@@ -71,13 +71,13 @@ def print_stat(numacores, cpus):
     """print runq stat data"""
 
     header_width = len("nr_switches")
-    width = 6
+    width = len("CPUXX")
     node = 0
-    fmtstr1 = ' %' + str(width) + 's'
-    fmtstr2 = '%' + str(header_width) + 's %' + str(width) + 's'
+    fmtstr1 = '\t%' + str(width) + 's'
+    fmtstr2 = '%' + str(header_width) + 's\t%' + str(width) + 's'
     while node < len(numacores):
         header = ('%' + str(header_width) + 's') % ' '
-        header += (' %-' + str(width) + 's') % ("Node" + str(node))
+        header += ('\t%' + str(width) + 's') % ("Node" + str(node))
         data1 = ''
         data2 = ''
         data3 = ''
@@ -85,7 +85,7 @@ def print_stat(numacores, cpus):
         node_sum2 = 0
         node_sum3 = 0
         for cpu in numacores[str(node)]:
-            header += (' %-' + str(width) + 's') % ("CPU" + cpu)
+            header += ('\t%' + str(width) + 's') % ("CPU" + cpu)
             runq = cpus[int(cpu)]
             data1 += fmtstr1 % runq["nr_running"]
             data2 += fmtstr1 % runq["load"]
