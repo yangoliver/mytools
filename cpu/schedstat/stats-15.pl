@@ -60,7 +60,7 @@ $TTWU_WAKE_REMOTE	= 35;
 $TTWU_MOVE_AFFINE	= 36;
 $TTWU_MOVE_BALANCE	= 37;
 
-die "Usage: $0 [-t] [file_prev] [file_curr]\n" unless &getopts("tcd");
+die "Usage: $0 [-t] [file_prev] [file_curr]\n" unless &getopts("tcdv");
 
 #
 # @domain_diff_all is an array, for each field of domain data, of the sum
@@ -106,8 +106,10 @@ sub summarize_data {
 	    @arr_curr = @{@{$per_cpu_curr[$cpu]}[$domain+10]};
 	    @arr_prev = @{@{$per_cpu_prev[$cpu]}[$domain+10]};
 	    foreach $i (2..37) {
-		print "domain$domain: arr_curr[$i] ($arr_curr[$i]) -" .
-		    " arr_prev[$i] ($arr_prev[$i])\n";
+		if ($opt_v) {
+			print "domain$domain: arr_curr[$i] ($arr_curr[$i]) -" .
+			    " arr_prev[$i] ($arr_prev[$i])\n";
+		}
 		$arr_diff[$i] = $arr_curr[$i] - $arr_prev[$i];
 		$diff[$domain+10][$i] += $arr_diff[$i];
 		$domain_diff_bycpu[$cpu]->[i] += $arr_diff[$i];
@@ -133,9 +135,11 @@ while (<>) {
     if ($curr[0] =~ /domain(\d+)/) {
 	$arr = $per_cpu_curr[$curr_cpu];
 	push @{$arr}, [ @curr ];
-	print "@{$arr}\n";
-	print "($curr_cpu,$1)$arr->[0],$arr->[$#{@{$arr}}]->[0]\n";
-	print "$#{@{$arr}}\n";
+	if ($opt_v) {
+		print "@{$arr}\n";
+		print "($curr_cpu,$1)$arr->[0],$arr->[$#{@{$arr}}]->[0]\n";
+		print "$#{@{$arr}}\n";
+	}
 	$max_domain = $1 if ($1 > $max_domain);
 	next;
     }
