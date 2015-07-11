@@ -5,14 +5,14 @@ use Getopt::Std;
 $curr_version = 15;
 
 $YLD_CNT		= 1;
-$LEGACY_EXP_CNT		= 2;
+$SCHED_EXP_CNT	= 2;
 $SCHED_CNT		= 3;
-$SCHED_GOIDLE		= 4;
+$SCHED_GOIDLE	= 4;
 $TTWU_CNT		= 5;
 $TTWU_LOCAL		= 6;
-$CPU_CPUTIME		= 7;
-$CPU_RUNDELAY		= 8;
-$CPU_SLICE_CNT		= 9;
+$CPU_CPUTIME	= 7;
+$CPU_RUNDELAY	= 8;
+$CPU_SLICE_CNT	= 9;
 
 #
 # per-domain stats
@@ -191,34 +191,25 @@ while (<>) {
     # version == 15
     #
     # These are the fields from the cpuN field, and deal with the runqueue
-    # that cpu is in.  [The fields listed in the comments below are currently
-    # incorrect, and will be updated within a few days.  The program, however,
-    # uses the fields correctly.  -- Rick 11/11/05]
+    # that cpu is in.
     #
-    # NOTE: the active queue is considered empty if it has only one process
-    #	in it, since obviously the process calling sched_yield is that process.
-    #
-    # First four are sched_yield statistics:
-    #     1) # of times both the active and the expired queue were empty
-    #     2) # of times just the active queue was empty
-    #     3) # of times just the expired queue was empty
-    #     4) # of times sched_yield() was called
+    # First one are sched_yield statistics:
+    #     1) # of times sched_yield() was called
     #
     # Next three are schedule() statistics:
-    #     5) # of times the active queue had at least one other process on it.
-    #     6) # of times we switched to the expired queue and reused it
-    #     7) # of times schedule() was called
+	#     2) A legacy array expiration count used in the O(1), always zero
+	#     3) # of times schedule() was called
+	#     4) # of times schedule() left the processor idle
     #
     # Next two are statistics dealing with try_to_wake_up():
-    #     8) # of times try_to_wake_up() was called
-    #     9) # of times try_to_wake_up() was called for a task that last
-    #        ran on this same cpu
+    #     5) # of times try_to_wake_up() was called
+	#     6) # of times try_to_wake_up() was called to wake up the local cpu
     #
     # Next three are statistics dealing with scheduling latency:
-    #	 10) sum of all time spent running by tasks on this processor (in ms)
-    #	 11) sum of all time spent waiting to run by tasks on this processor
+    #	  7) sum of all time spent running by tasks on this processor (in ms)
+    #	  8) sum of all time spent waiting to run by tasks on this processor
     #	     (in ms)
-    #	 12) # of tasks (not necessarily unique) given to the processor
+    #	  9) # of timeslices run on this cpu
     #
     # These are the fields from the domainN field, and deal with each of the
     # domains the previously mentioned cpu is in. The first field is a bit
@@ -280,18 +271,20 @@ while (<>) {
     #  27) # of times active_load_balance() tried to move a task and failed
     #  28) # of times active_load_balance() successfully moved a task 
     #
-    # Next two are sched_balance_exec() statistics:
-    #  29) # of times in this domain sched_balance_exec() successfully
-    #      pushed a task to a new cpu
-    #  30) # of times in this domain sched_balance_exec() tried but failed
-    #      to push a task to a new cpu 
+    # Next six are for sched_balance_exec and sched_balance_fork, always zero:
+	#  29) sbe_cnt is not used
+    #  30) sbe_balanced is not used
+	#  31) sbe_pushed is not used
+	#  32) sbf_cnt is not used
+	#  33) sbf_balanced is not used
+	#  34) sbf_pushed is not used
     #
     # Next three are try_to_wake_up() statistics:
-    #  31) # of times in this domain try_to_wake_up() awoke a task that
+    #  35) # of times in this domain try_to_wake_up() awoke a task that
     #      last ran on a different cpu in this domain
-    #  32) # of times in this domain try_to_wake_up() moved a task to the
+    #  36) # of times in this domain try_to_wake_up() moved a task to the
     #      waking cpu because it was cache-cold on its own cpu anyway
-    #  33) # of times in this domain try_to_wake_up() moved a task to the
+    #  37) # of times in this domain try_to_wake_up() moved a task to the
     #
 
 }
