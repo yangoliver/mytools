@@ -60,7 +60,7 @@ $TTWU_WAKE_REMOTE	= 35;
 $TTWU_MOVE_AFFINE	= 36;
 $TTWU_MOVE_BALANCE	= 37;
 
-die "Usage: $0 [-t] [file]\n" unless &getopts("tcd");
+die "Usage: $0 [-t] [file_prev] [file_curr]\n" unless &getopts("tcd");
 
 #
 # @domain_diff_all is an array, for each field of domain data, of the sum
@@ -133,7 +133,7 @@ while (<>) {
     if ($curr[0] =~ /domain(\d+)/) {
 	$arr = $per_cpu_curr[$curr_cpu];
 	push @{$arr}, [ @curr ];
-	print "oliver @{$arr}\n";
+	print "@{$arr}\n";
 	print "($curr_cpu,$1)$arr->[0],$arr->[$#{@{$arr}}]->[0]\n";
 	print "$#{@{$arr}}\n";
 	$max_domain = $1 if ($1 > $max_domain);
@@ -370,13 +370,13 @@ sub print_diffs {
 	    $totalslicecnt += $arr[$CPU_SLICE_CNT];
 	    $totalrundelay += $arr[$CPU_RUNDELAY];
 	    if ($opt_c) {
-		printf "    %6.2f/%-6.2f    avg runtime/latency on cpu %d (ms)\n",
+		printf "    %6.2f/%-6.2f    avg runtime/latency on cpu %d (ns)\n",
 		    $arr[$CPU_CPUTIME]/$arr[$CPU_SLICE_CNT],
 		    $arr[$CPU_RUNDELAY]/$arr[$CPU_SLICE_CNT], $cpu;
 	    }
 	}
     }
-    printf "    %6.2f/%-6.2f    avg runtime/latency over all cpus (ms)\n",
+    printf "    %6.2f/%-6.2f    avg runtime/latency over all cpus (ns)\n",
 	$totalcpu/$totalslicecnt, $totalrundelay/$totalslicecnt;
 
     printf("\n");
