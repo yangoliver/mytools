@@ -312,39 +312,12 @@ sub print_diffs {
     # sched_yield() stats
     #
     printf "    %7d          sys_sched_yield()\n", $diff[$YLD_CNT];
-    printf "    %7d(%6.2f%%) found (only) active queue empty on current cpu\n",
-	$diff[$YLD_ACT_EMPTY]-$diff[$YLD_BOTH_EMPTY],
-	$diff[$YLD_CNT] ?
-	    (100*($diff[$YLD_ACT_EMPTY]-$diff[$YLD_BOTH_EMPTY])/
-		$diff[$YLD_CNT]) : 0
-	if ($diff[$YLD_ACT_EMPTY]-$diff[$YLD_BOTH_EMPTY]);
-    printf "    %7d(%6.2f%%) found (only) expired queue empty on current cpu\n",
-	$diff[$YLD_EXP_EMPTY],
-	$diff[$YLD_CNT] ? (100*$diff[$YLD_EXP_EMPTY]/$diff[$YLD_CNT]) : 0
-	if ($diff[$YLD_EXP_EMPTY]);
-    printf "    %7d(%6.2f%%) found both queues empty on current cpu\n",
-	$diff[$YLD_BOTH_EMPTY],
-	$diff[$YLD_CNT] ? (100*$diff[$YLD_BOTH_EMPTY]/$diff[$YLD_CNT]) : 0
-	if ($diff[$YLD_BOTH_EMPTY]);
-    printf "    %7d(%6.2f%%) found neither queue empty on current cpu\n\n",
-	$diff[$YLD_CNT]-($diff[$YLD_EXP_EMPTY]+$diff[$YLD_ACT_EMPTY]),
-	$diff[$YLD_CNT] ?
-	    100*($diff[$YLD_CNT]-($diff[$YLD_EXP_EMPTY]+$diff[$YLD_ACT_EMPTY]))/
-		$diff[$YLD_CNT] : 0
-	if ($diff[$YLD_CNT]-($diff[$YLD_EXP_EMPTY]+$diff[$YLD_ACT_EMPTY]));
 
     #
     # schedule() stats
     #
     print "\n";
     printf "    %7d          schedule()\n", $diff[$SCHED_CNT];
-    printf "    %7d(%6.2f%%) switched active and expired queues\n",
-	$diff[$SCHED_CNT] - $diff[$SCHED_NOSWITCH], 
-	(100*($diff[$SCHED_CNT] - $diff[$SCHED_NOSWITCH])/$diff[$SCHED_CNT])
-	if ($diff[$SCHED_CNT]);
-    printf "    %7d(%6.2f%%) used existing active queue\n",
-	100*$diff[$SCHED_NOSWITCH]/$diff[$SCHED_CNT]
-	if ($diff[$SCHED_NOSWITCH]);
     printf "    %7d(%6.2f%%) scheduled no process (left cpu idle)\n",
 	$diff[$SCHED_GOIDLE], 100*$diff[$SCHED_GOIDLE]/$diff[$SCHED_CNT]
 	if ($diff[$SCHED_CNT]);
@@ -389,22 +362,22 @@ sub print_diffs {
     #
     # latency stats
     #
-    $totalcpu = $totaltripcnt = $totalrundelay = 0;
+    $totalcpu = $totalslicecnt = $totalrundelay = 0;
     for ($cpu = 0; $cpu <= $max_cpu; $cpu++) {
 	@arr = @{$per_cpu_diff[$cpu]};
-	if ($arr[$CPU_TRIPCNT] && ($arr[$CPU_CPUTIME] || $arr[$CPU_RUNDELAY])) {
+	if ($arr[$CPU_SLICE_CNT] && ($arr[$CPU_CPUTIME] || $arr[$CPU_RUNDELAY])) {
 	    $totalcpu += $arr[$CPU_CPUTIME];
-	    $totaltripcnt += $arr[$CPU_TRIPCNT];
+	    $totalslicecnt += $arr[$CPU_SLICE_CNT];
 	    $totalrundelay += $arr[$CPU_RUNDELAY];
 	    if ($opt_c) {
 		printf "    %6.2f/%-6.2f    avg runtime/latency on cpu %d (ms)\n",
-		    $arr[$CPU_CPUTIME]/$arr[$CPU_TRIPCNT],
-		    $arr[$CPU_RUNDELAY]/$arr[$CPU_TRIPCNT], $cpu;
+		    $arr[$CPU_CPUTIME]/$arr[$CPU_SLICE_CNT],
+		    $arr[$CPU_RUNDELAY]/$arr[$CPU_SLICE_CNT], $cpu;
 	    }
 	}
     }
     printf "    %6.2f/%-6.2f    avg runtime/latency over all cpus (ms)\n",
-	$totalcpu/$totaltripcnt, $totalrundelay/$totaltripcnt;
+	$totalcpu/$totalslicecnt, $totalrundelay/$totalslicecnt;
 
     printf("\n");
 
