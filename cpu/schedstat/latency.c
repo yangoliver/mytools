@@ -146,7 +146,7 @@ void main(int argc, char *argv[])
 		    nran - oran ?
 			(double)(wait_ticks-owait_ticks)/(nran - oran) : 0);
 	    else
-		printf("%s avgrun=%4.2fms avgwait=%4.2fms\n",
+		printf("%s avgrun=%4.2fns avgwait=%4.2fns\n",
 		    id, nran - oran ?
 			(double)(run_ticks-orun_ticks)/(nran - oran) : 0,
 		    nran - oran ?
@@ -163,6 +163,6 @@ void main(int argc, char *argv[])
     if (id[0])
 	printf("Process %s has exited.\n", id);
     else 
-	printf("Process %d does not exist.\n", pid);
+	printf("Process %d does not exist, or no schedstat proc file\n", pid);
     exit(0);
 }
