@@ -161,10 +161,10 @@ while (<>) {
 		print_diffs();
 		@per_cpu_prev = @per_cpu_curr;
 	    } else {
-		@per_cpu_prev = @per_cpu_curr if (!defined(@per_cpu_prev));
+		@per_cpu_prev = @per_cpu_curr if (!@per_cpu_prev);
 	    }
 	} else {
-	    @per_cpu_prev = @per_cpu_curr if (!--$first && !defined(@per_cpu_prev));
+	    @per_cpu_prev = @per_cpu_curr if (!--$first && !@per_cpu_prev);
 	}
 	next;
     }
