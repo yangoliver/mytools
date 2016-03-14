@@ -18,7 +18,7 @@ my $V = '0.32';
 use Getopt::Long qw(:config no_auto_abbrev);
 
 my $quiet = 0;
-my $tree = 1;
+my $tree = 0;	# turn off kernel tree check
 my $chk_signoff = 1;
 my $chk_patch = 1;
 my $tst_only;
@@ -1843,7 +1843,7 @@ sub process {
 
 	my $in_header_lines = $file ? 0 : 1;
 	my $in_commit_log = 0;		#Scanning lines before patch
-	my $reported_maintainer_file = 0;
+	my $reported_maintainer_file = 1;	# turn off maintainer check
 	my $non_utf8_charset = 0;
 
 	my $last_blank_line = 0;
@@ -5363,7 +5363,7 @@ EOM
 $vname has style problems, please review.
 
 If any of these errors are false positives, please report
-them to the maintainer, see CHECKPATCH in MAINTAINERS.
+them to the maintainer.
 EOM
 	}
 
