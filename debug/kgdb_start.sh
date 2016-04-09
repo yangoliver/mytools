@@ -16,13 +16,15 @@ else
 	echo "Build complete...please run this tool again"
 fi
 
-echo "####Hints to use kgdb####"
+echo "####Hints to use kgdb on target machine####"
+echo "echo 'kbd,ttyS0' > /sys/module/kgdboc/parameters/kgdboc"
+echo "echo g > /proc/sysrq-trigger"
+echo ""
+echo "####Hints to use kgdb on client####"
 echo "Please telnet 127.0.0.1 2223 for console access"
-echo "Enter kgdb could use: echo g > /proc/sysrq-trigger on target machine"
 echo "Start gdb client, please make sure you installed linux gdb"
 echo "Use this gdb command to connect: target remote 127.0.0.1:2222"
 echo "Dedailed information, see: http://oliveryang.net/2015/08/using-kgdb-debug-linux-kernel-2"
-echo "####Hints to use kgdb####"
 
 if [ -f ${DEBUG_KERNEL} ]; then
 	gdb ${DEBUG_KERNEL}
