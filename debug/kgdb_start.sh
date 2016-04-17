@@ -5,15 +5,23 @@ CONSOLE_IP="172.16.124.1"
 CONSOLE_PORT="9999"
 
 # The default setting is based on my centos 7.2 VM, need to be changed per new env
-AGENT_PROXY=~/agent-proxy/agent-proxy
-DEBUG_KERNEL=/usr/lib/debug/lib/modules/3.10.0-327.el7.x86_64/vmlinux
+HOME=~
+AGENT_HOME=${HOME}/agent-proxy
+AGENT_PROXY=${HOME}/agent-proxy/agent-proxy
+DEBUG_KERNEL=/usr/lib/debug/lib/modules/`uname -r`/vmlinux
 
 if [ -f ${AGENT_PROXY} ]; then
+	PID=`pidof agent-proxy`
+	if [ ${PID} -ne 0 ]; then
+		kill -9 $PID
+	fi
 	${AGENT_PROXY} 2223^2222 ${CONSOLE_IP} ${CONSOLE_PORT} &
 else
 	echo "Download source code and build the tool first"
-	cd ~;git clone http://git.kernel.org/pub/scm/utils/kernel/kgdb/agent-proxy.git;make all
+	cd ${HOME};git clone http://git.kernel.org/pub/scm/utils/kernel/kgdb/agent-proxy.git;
+	cd ${AGENT_HOME};make all
 	echo "Build complete...please run this tool again"
+	exit 0
 fi
 
 echo "####Hints to use kgdb on target machine####"
