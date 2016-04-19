@@ -37,5 +37,12 @@ echo "Dedailed information, see: http://oliveryang.net/2015/08/using-kgdb-debug-
 if [ -f ${DEBUG_KERNEL} ]; then
 	gdb ${DEBUG_KERNEL}
 else
-	echo "Please download debug kernel"
+	DEBUG_KERNEL=/lib/modules/`uname -r`/build/vmlinux
+	if [ -f ${DEBUG_KERNEL} ]; then
+		gdb ${DEBUG_KERNEL}
+	else	
+		echo "Please download debug kernel"
+	fi
 fi
+
+exit 0
