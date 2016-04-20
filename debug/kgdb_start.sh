@@ -8,11 +8,33 @@ CONSOLE_PORT="9999"
 HOME=~
 AGENT_HOME=${HOME}/agent-proxy
 AGENT_PROXY=${HOME}/agent-proxy/agent-proxy
-DEBUG_KERNEL=/usr/lib/debug/lib/modules/`uname -r`/vmlinux
+# For self build kernel
+# DEBUG_DIR=/lib/modules/`uname -r`/build
+# For RHEL/CentOS/Fedora by default
+DEBUG_DIR=/usr/lib/debug/lib/modules/`uname -r`
+VMLINUX=vmlinux
+DEBUG_KERNEL=${DEBUG_DIR}/${VMLINUX}
+GDB_PY=${DEBUG_DIR}/vmlinux-gdb.py
+
+if [ x$1 != x ] ;then
+	DEBUG_KERNEL = $1
+fi
+
+if [ ! -f ${DEBUG_KERNEL} ]; then
+	echo "Can not find debug kernel at ${DEBUG_KERNEL}"
+	echo "Please specify debug kernel path or set DEBUG_KERNEL variable"
+	exit 1
+fi
+
+# Generating .gdbinit file...
+if [ -f ${GDB_PY} ] && [ ! -f ~/.gdbinit ]; then
+	echo "python gdb.COMPLETE_EXPRESSION = gdb.COMPLETE_SYMBOL" > ~/.gdbinit
+	echo "add-auto-load-safe-path ${DEBUG_DIR}/vmlinux-gdb.py" >> ~/.gdbinit
+fi
 
 if [ -f ${AGENT_PROXY} ]; then
 	PID=`pidof agent-proxy`
-	if [ ${PID} -ne 0 ]; then
+	if [ $? -eq 0 ]; then
 		kill -9 $PID
 	fi
 	${AGENT_PROXY} 2223^2222 ${CONSOLE_IP} ${CONSOLE_PORT} &
@@ -34,15 +56,7 @@ echo "Start gdb client, please make sure you installed linux gdb"
 echo "Use this gdb command to connect: target remote 127.0.0.1:2222"
 echo "Dedailed information, see: http://oliveryang.net/2015/08/using-kgdb-debug-linux-kernel-2"
 
-if [ -f ${DEBUG_KERNEL} ]; then
-	gdb ${DEBUG_KERNEL}
-else
-	DEBUG_KERNEL=/lib/modules/`uname -r`/build/vmlinux
-	if [ -f ${DEBUG_KERNEL} ]; then
-		gdb ${DEBUG_KERNEL}
-	else	
-		echo "Please download debug kernel"
-	fi
-fi
+# The vmlinux-gdb.py requires enter the debug dir first, then gdb vmlinux
+cd ${DEBUG_DIR}; gdb ${VMLINUX}
 
 exit 0
