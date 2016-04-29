@@ -30,6 +30,10 @@ fi
 if [ -f ${GDB_PY} ] && [ ! -f ~/.gdbinit ]; then
 	echo "python gdb.COMPLETE_EXPRESSION = gdb.COMPLETE_SYMBOL" > ~/.gdbinit
 	echo "add-auto-load-safe-path ${DEBUG_DIR}/vmlinux-gdb.py" >> ~/.gdbinit
+else
+	echo "please add below two lines in ~/.gdbinit"
+	echo "python gdb.COMPLETE_EXPRESSION = gdb.COMPLETE_SYMBOL"
+	echo "add-auto-load-safe-path ${DEBUG_DIR}/vmlinux-gdb.py"
 fi
 
 if [ -f ${AGENT_PROXY} ]; then
