@@ -1,37 +1,53 @@
 #!/usr/bin/stap
+global pid = 0, trace = 0
 global opens, reads, writes, totals
 
-probe begin { printf("starting probe\n") }
+probe begin {
+  printf("starting probe\n")
+  %( $# > 1 %? log("ERROR: argument can't be more than 1") exit() %)
+  %( $# == 1 %? pid = $1 %: trace = 1 %)
+}
 
 probe syscall.open {
-  e=execname();
-  opens[e] <<< 1 # statistics array
+  if (trace || pid() == pid) {
+    e=execname();
+    opens[e] <<< 1 # statistics array
+  }
 }
 
 probe syscall.read.return {
-  count = $return
-  if ( count >= 0 ) {
-    e=execname();
-    reads[e] <<< count # statistics array
-    totals[e] += count
+  if (trace || pid() == pid) {
+    count = $return
+    if ( count >= 0 ) {
+      e=execname();
+      reads[e] <<< count # statistics array
+      totals[e] += count
+    }
   }
 }
 
 probe syscall.write.return {
-  count = $return
-  if (count >= 0 ) {
-    e=execname();
-    writes[e] <<< count # statistics array
-    totals[e] += count
+  if (trace || pid() == pid) {
+    count = $return
+    if (count >= 0 ) {
+      e=execname();
+      writes[e] <<< count # statistics array
+      totals[e] += count
+    }
   }
 }
 
 probe end {
-  printf("\n%16s %8s %8s %8s %8s %8s %8s %8s\n",
-    "", "", "", "read", "read", "", "write", "write")
-  printf("%16s %8s %8s %8s %8s %8s %8s %8s\n",
-    "name", "open", "read", "KB tot", "B avg", "write", "KB tot", "B avg")
+  header = 1 
   foreach (name in totals- limit 10) { # sort by total io
+    if (header) {
+      printf("\nIO Summary:\n\n")
+      printf("\n%16s %8s %8s %8s %8s %8s %8s %8s\n",
+        "", "", "", "read", "read", "", "write", "write")
+      printf("%16s %8s %8s %8s %8s %8s %8s %8s\n",
+        "name", "open", "read", "KB tot", "B avg", "write", "KB tot", "B avg")
+      header = 0
+    }
     printf("%16s %8d %8d %8d %8d %8d %8d %8d\n",
       name, @count(opens[name]),
       @count(reads[name]),
@@ -42,15 +58,23 @@ probe end {
       (@count(writes[name]) ? @avg(writes[name]) : 0 ))
   }
 
-  printf("\nRead I/O size (bytes):\n\n")
+  header = 1
   foreach (name in reads- limit 10) { # sort by reads
+    if (header) {
+      printf("\nRead I/O size (bytes):\n\n")
+      header = 0
+    }
     printf("process name: %s\n", name)
     print(@hist_log(reads[name]))
   }
 
-  printf("\nWrite I/O size (bytes):\n\n")
+  header = 1
   foreach (name in writes- limit 10) { # sort by writes
+    if (header) {
+      printf("\nWrite I/O size (bytes):\n\n")
+      header = 0
+    }
     printf("process name: %s\n", name)
-	print(@hist_log(writes[name]))
+    print(@hist_log(writes[name]))
   }
 }
