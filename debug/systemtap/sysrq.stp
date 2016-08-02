@@ -1,0 +1,23 @@
+#!/usr/bin/stap -g
+#
+# Before using it, please boot kernel with sysrq_always_enabled=true
+# Or just run 'wr sysrq_always_enabled 1' in crash tool
+
+%{
+	#include <linux/sysrq.h>
+	int once = 1;
+%}
+
+function sysrq_once(key:long) %{
+        /* guru */
+		if (once) {
+			handle_sysrq(STAP_ARG_key);
+			once = 0;
+		}
+%}
+
+probe kernel.function("generic_make_request") {
+	sysrq_once(0x67)
+	print("Sent a sysrq\n")
+	exit()
+}
