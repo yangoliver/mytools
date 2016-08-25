@@ -1,0 +1,45 @@
+#!/usr/bin/stap
+/*
+ * bio_sectors.stp Measure storage (bio) I/O size distribution.
+ *			For Linux, uses SystemTap (non-debuginfo).
+ *
+ * USAGE: ./bio_sectors.stp
+ *
+ * This script uses the kernel tracepoint block_rq_insert. The output includes
+ * the name of the process or thread that was on-CPU when the I/O request was
+ * inserted on the issue queue.
+ *
+ * The code was based on below file,
+ *
+ *     https://sourceware.org/systemtap/examples/lwtools/bitesize-nd.stp
+ *
+ * From systemtap-lwtools: https://github.com/brendangregg/systemtap-lwtools
+ *
+ * See the corresponding man page (in systemtap-lwtools) for more info.
+ */
+
+global sz;
+
+probe begin
+{
+	printf("Tracing block I/O... Hit Ctrl-C to end.\n");
+}
+
+probe kernel.trace("block_rq_insert") {
+	/*
+	 * You aren't supposed to access __data_len directly as it is internal,
+	 * but I don't see another way...
+	 * Get number of sectors based on bytes
+	 */
+	sz[execname()] <<< $rq->__data_len >> 9;
+}
+
+probe end
+{
+	printf("\nI/O size (sectors):\n\n");
+	foreach (name in sz+) {
+		printf("process name: %s\n", name);
+		print(@hist_log(sz[name]));
+	} 
+	delete sz;
+}
