@@ -36,6 +36,9 @@ else
 	echo "add-auto-load-safe-path ${DEBUG_DIR}/vmlinux-gdb.py"
 fi
 
+echo "Please make sure your serial ports between two machines get connected correctly"
+echo "For VMs on Mac, run **socat1** command defined in your personal .bashrc file"
+
 if [ -f ${AGENT_PROXY} ]; then
 	PID=`pidof agent-proxy`
 	if [ $? -eq 0 ]; then
