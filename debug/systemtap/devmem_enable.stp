@@ -1,0 +1,5 @@
+#!/usr/bin/stap -g
+
+probe kernel.function("devmem_is_allowed").return {
+	$return = 1;
+}
