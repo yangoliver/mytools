@@ -6,11 +6,11 @@
 %}
 
 function kgdb_once() %{
-        /* guru */
-		if (once) {
-			kgdb_breakpoint();
-			once = 0;
-		}
+	/* guru */
+	if (once) {
+		kgdb_breakpoint();
+		once = 0;
+	}
 %}
 
 probe kernel.function("generic_make_request") {

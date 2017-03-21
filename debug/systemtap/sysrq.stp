@@ -9,11 +9,11 @@
 %}
 
 function sysrq_once(key:long) %{
-        /* guru */
-		if (once) {
-			handle_sysrq(STAP_ARG_key);
-			once = 0;
-		}
+	/* guru */
+	if (once) {
+		handle_sysrq(STAP_ARG_key);
+		once = 0;
+	}
 %}
 
 probe kernel.function("generic_make_request") {
