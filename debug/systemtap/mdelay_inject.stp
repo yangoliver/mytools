@@ -1,0 +1,23 @@
+#!/usr/bin/stap -g
+#
+
+%{
+	#include <linux/delay.h>
+	int once = 1;
+%}
+
+function mdelay_once(msec:long) %{
+	/* guru */
+	if (once) {
+		mdelay(STAP_ARG_msec);
+		once = 0;
+	}
+%}
+
+probe kernel.function("sys_read") {
+	if (execname() == "cat") {
+		msec = $1
+		mdelay_once(msec)
+		exit()
+	}
+}

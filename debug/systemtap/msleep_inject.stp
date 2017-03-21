@@ -1,0 +1,22 @@
+#!/usr/bin/stap -g
+#
+
+%{
+	int once = 1;
+%}
+
+function msleep_once(msec:long) %{
+	/* guru */
+	if (once) {
+		msleep(STAP_ARG_msec);
+		once = 0;
+	}
+%}
+
+probe kernel.function("sys_read") {
+	if (execname() == "cat") {
+		msec = $1
+		msleep_once(msec)
+		exit()
+	}
+}
